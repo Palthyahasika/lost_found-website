@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>My Reports | ReUnite</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<script>
+tailwind.config = {
+darkMode:'class',
+theme:{
+extend:{
+colors:{
+primary:'#3B82F6'
+}
+}
+}
+}
+</script>
+
+</head>
+
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen">
+
+<!-- NAVBAR -->
+<nav class="fixed top-0 w-full z-50 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700">
+
+<div class="max-w-7xl mx-auto px-6">
+
+<div class="flex justify-between items-center h-16">
+
+<div class="flex items-center">
+<i class="fas fa-search-location text-3xl text-primary mr-2"></i>
+<h1 class="font-bold text-2xl">
+Re<span class="text-primary">Unite</span>
+</h1>
+</div>
+
+<div class="flex gap-3">
+
+<button onclick="toggleDarkMode()"
+class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">
+
+<i class="fas fa-moon dark:hidden"></i>
+<i class="fas fa-sun hidden dark:block text-yellow-400"></i>
+
+</button>
+
+<button
+onclick="window.location.href='index.html'"
+class="bg-primary text-white px-5 py-2 rounded-full hover:bg-blue-600 transition">
+
+← Back Home
+
+</button>
+
+
+</div>
+
+</div>
+
+</div>
+
+</nav>
+
+<!-- HERO -->
+<section class="pt-32 pb-20 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 text-white">
+
+<div class="max-w-7xl mx-auto px-6 text-center">
+
+<h1 class="text-5xl font-extrabold mb-4">
+📋 My Reports
+</h1>
+
+<p class="text-xl text-blue-100">
+Track and manage all your reported lost and found items.
+</p>
+
+</div>
+
+</section>
+
+<!-- REPORTS -->
+<section class="py-16">
+
+<div class="max-w-7xl mx-auto px-6">
+
+<div class="grid md:grid-cols-4 gap-6 mb-10">
+
+<div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow">
+<h3 class="text-gray-500">Total Reports</h3>
+<p id="totalReports" class="text-3xl font-bold text-blue-500">0</p>
+</div>
+
+<div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow">
+<h3 class="text-gray-500">Lost Items</h3>
+<p id="lostReports" class="text-3xl font-bold text-red-500">0</p>
+</div>
+
+<div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow">
+<h3 class="text-gray-500">Found Items</h3>
+<p id="foundReports" class="text-3xl font-bold text-green-500">0</p>
+</div>
+
+<div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow">
+<h3 class="text-gray-500">Returned</h3>
+<p id="returnedReports" class="text-3xl font-bold text-purple-500">0</p>
+</div>
+
+</div>
+
+<div id="myReportsGrid"
+class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+</div>
+<!-- CLAIM REQUESTS -->
+
+<div class="mt-16">
+
+<h2 class="text-3xl font-bold mb-6">
+Claim Requests
+</h2>
+
+<div id="claimsContainer"
+class="grid gap-4">
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    if (localStorage.getItem("darkMode") === "true") {
+        document.documentElement.classList.add("dark");
+    }
+
+});
+function toggleDarkMode() {
+document.documentElement.classList.toggle('dark');
+localStorage.setItem(
+'darkMode',
+document.documentElement.classList.contains('dark')
+);
+}
+
+if(localStorage.getItem('darkMode') === 'true'){
+document.documentElement.classList.add('dark');
+}
+
+const currentUser =
+JSON.parse(localStorage.getItem('reunite_user'));
+const grid =
+document.getElementById('myReportsGrid');
+
+
+loadMyReports();
+
+loadClaims();
+async function loadMyReports() {
+
+    if(!currentUser){
+
+        grid.innerHTML = `
+        <div class="col-span-full text-center py-20">
+            <h2 class="text-4xl font-bold mb-4">
+                Please Login
+            </h2>
+        </div>
+        `;
+
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            "http://localhost:5000/api/items"
+        );
+
+        window.items = await response.json();
+
+const myItems = window.items.filter(item => {
+    return (
+        item.userId &&
+        (item.userId._id === currentUser.id ||
+         item.userId === currentUser.id)
+    );
+});
+
+        updateMyReportStats(myItems);
+
+        if(myItems.length === 0){
+
+            grid.innerHTML = `
+            <div class="col-span-full text-center py-20">
+                <h2 class="text-4xl font-bold">
+                    No Reports Yet
+                </h2>
+            </div>
+            `;
+
+            return;
+        }
+
+        grid.innerHTML = "";
+
+        myItems.forEach(item => {
+
+            const statusColor =
+            item.status === "Lost"
+            ? "bg-red-100 text-red-700"
+            : "bg-green-100 text-green-700";
+
+            grid.innerHTML += `
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+
+                <div class="relative h-56">
+                    <img
+                    src="${item.image}"
+                    class="w-full h-full object-cover">
+
+                    <span class="absolute top-4 right-4 px-3 py-1 rounded-full text-sm font-bold ${statusColor}">
+                        ${item.status}
+                    </span>
+                </div>
+
+                <div class="p-6">
+
+                    <h3 class="text-2xl font-bold mb-2">
+                        ${item.itemName}
+                    </h3>
+
+                    <p class="text-primary font-semibold mb-2">
+                        ${item.category}
+                    </p>
+
+                    <p class="mb-4">
+                        ${item.description}
+                    </p>
+
+                    <p>
+                        📍 ${item.location}
+                    </p>
+
+                    <p>
+                        📞 ${item.contactNumber}
+                    </p>
+                    <div class="flex gap-2 mt-4">
+
+    <button
+    onclick="editReport('${item._id}')"
+    class="flex-1 bg-yellow-500 text-white py-2 rounded-lg">
+        Edit
+    </button>
+
+    <button
+    onclick="deleteReport('${item._id}')"
+    class="flex-1 bg-red-500 text-white py-2 rounded-lg">
+        Delete
+    </button>
+
+</div>
+
+                </div>
+
+            </div>
+            `;
+
+        });
+
+    }
+    catch(error){
+
+        console.log(error);
+
+    }
+
+}
+function updateMyReportStats(myItems) {
+
+    document.getElementById("totalReports").textContent =
+        myItems.length;
+
+    document.getElementById("lostReports").textContent =
+        myItems.filter(item => item.itemType === "Lost").length;
+
+    document.getElementById("foundReports").textContent =
+        myItems.filter(item => item.itemType === "Found").length;
+
+    document.getElementById("returnedReports").textContent =
+        myItems.filter(item => item.status === "Returned").length;
+}
+
+function markReturned(id){
+
+    const item = items.find(i => i.id == id);
+
+    if(item){
+        item.status = "Returned";
+
+        localStorage.setItem(
+            "reunite_items",
+            JSON.stringify(items)
+        );
+
+        location.reload();
+    }
+}
+async function deleteReport(id){
+
+    if(!confirm("Delete this report?")){
+        return;
+    }
+
+    try{
+
+        const response = await fetch(
+            `http://localhost:5000/api/items/${id}`,
+            {
+                method: "DELETE"
+            }
+        );
+
+        const data = await response.json();
+
+        if(response.ok){
+
+            alert("Deleted Successfully");
+
+            loadMyReports();
+
+        }else{
+
+            alert(data.message);
+
+        }
+
+    }
+    catch(error){
+
+        console.log(error);
+
+    }
+}
+async function editReport(id){
+
+    const item = items.find(i => i._id === id);
+
+    const newName =
+    prompt("Edit Item Name:", item.itemName);
+
+    if(!newName) return;
+
+    const newDescription =
+    prompt("Edit Description:", item.description);
+
+    const newLocation =
+    prompt("Edit Location:", item.location);
+
+    const newContact =
+    prompt("Edit Contact Number:", item.contactNumber);
+
+    try{
+
+        const response = await fetch(
+            `http://localhost:5000/api/items/${id}`,
+            {
+                method:"PUT",
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body: JSON.stringify({
+                    itemName:newName,
+                    description:newDescription,
+                    location:newLocation,
+                    contactNumber:newContact
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if(response.ok){
+
+            alert("Updated Successfully");
+
+            loadMyReports();
+
+        }else{
+
+            alert(data.message);
+
+        }
+
+    }
+    catch(error){
+
+        console.log(error);
+
+    }
+}
+async function loadClaims() {
+
+    try {
+
+        const response = await fetch(
+            "http://localhost:5000/api/claims"
+        );
+
+        const claims = await response.json();
+
+        const myClaims = claims.filter(
+            claim =>
+            claim.ownerId === currentUser.id
+        );
+
+        const container =
+        document.getElementById(
+            "claimsContainer"
+        );
+
+        container.innerHTML = "";
+
+        if(myClaims.length === 0){
+
+            container.innerHTML =
+            "<p>No claim requests yet.</p>";
+
+            return;
+        }
+
+        myClaims.forEach(claim => {
+
+            container.innerHTML += `
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow">
+
+                <h3 class="font-bold text-xl">
+                    ${claim.itemId.itemName}
+                </h3>
+
+                <p>
+                    Claimant:
+                    ${claim.claimantId.name}
+                </p>
+
+                <p>
+                    Email:
+                    ${claim.claimantId.email}
+                </p>
+
+                <p>
+                    Status:
+                    ${claim.status}
+                </p>
+
+                ${
+                    claim.status === "Pending"
+                    ?
+                    `
+                    <div class="flex gap-2 mt-4">
+
+                        <button
+                        onclick="approveClaim('${claim._id}')"
+                        class="bg-green-500 text-white px-4 py-2 rounded">
+
+                        Approve
+
+                        </button>
+
+                        <button
+                        onclick="rejectClaim('${claim._id}')"
+                        class="bg-red-500 text-white px-4 py-2 rounded">
+
+                        Reject
+
+                        </button>
+
+                    </div>
+                    `
+                    :
+                    ""
+                }
+
+            </div>
+            `;
+        });
+
+    }
+    catch(error){
+
+        console.log(error);
+
+    }
+}
+async function approveClaim(id){
+
+    const response = await fetch(
+        `http://localhost:5000/api/claims/approve/${id}`,
+        {
+            method: "PUT"
+        }
+    );
+
+    const data = await response.json();
+
+    alert(data.message);
+
+    loadClaims();
+}
+async function rejectClaim(id){
+
+    const response = await fetch(
+        `http://localhost:5000/api/claims/reject/${id}`,
+        {
+            method: "PUT"
+        }
+    );
+
+    const data = await response.json();
+
+    alert(data.message);
+
+    loadClaims();
+}
+</script>
+
+</body>
+</html>

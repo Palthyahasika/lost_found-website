@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>My Profile | ReUnite</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+
+<nav class="bg-white shadow p-4 flex justify-between">
+
+<h1 class="text-2xl font-bold">
+Re<span class="text-blue-500">Unite</span>
+</h1>
+
+<button
+onclick="window.location.href='index.html'"
+class="bg-blue-500 text-white px-4 py-2 rounded">
+
+← Back Home
+
+</button>
+
+</nav>
+
+<div class="max-w-4xl mx-auto py-12 px-4">
+
+<div class="bg-white rounded-2xl shadow p-8">
+
+<div class="text-center">
+
+<img
+id="profileAvatar"
+src=""
+class="w-24 h-24 rounded-full mx-auto mb-4">
+
+<h2
+id="profileName"
+class="text-3xl font-bold">
+</h2>
+
+<p
+id="profileEmail"
+class="text-gray-500">
+</p>
+
+</div>
+<div class="grid md:grid-cols-3 gap-6 mt-8">
+
+    <div class="bg-blue-50 p-6 rounded-xl text-center">
+        <h3 class="text-gray-500">Total Reports</h3>
+        <p id="totalReports"
+        class="text-3xl font-bold text-blue-500">
+        0
+        </p>
+    </div>
+
+    <div class="bg-red-50 p-6 rounded-xl text-center">
+        <h3 class="text-gray-500">Lost Reports</h3>
+        <p id="lostReports"
+        class="text-3xl font-bold text-red-500">
+        0
+        </p>
+    </div>
+
+    <div class="bg-green-50 p-6 rounded-xl text-center">
+        <h3 class="text-gray-500">Found Reports</h3>
+        <p id="foundReports"
+        class="text-3xl font-bold text-green-500">
+        0
+        </p>
+    </div>
+
+</div>
+<div class="text-center mt-8">
+
+    <button
+    onclick="editProfile()"
+    class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold">
+
+        Edit Profile
+
+    </button>
+    <div class="text-center mt-4">
+
+    <button
+    onclick="changePassword()"
+    class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-semibold">
+
+        Change Password
+
+    </button>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+const currentUser =
+JSON.parse(localStorage.getItem("reunite_user"));
+
+document.getElementById("profileName")
+.textContent = currentUser.name;
+
+document.getElementById("profileEmail")
+.textContent = currentUser.email;
+
+const items =
+JSON.parse(localStorage.getItem("reunite_items")) || [];
+
+const myItems =
+items.filter(item =>
+    item.userId === currentUser.id
+);
+
+document.getElementById("totalReports")
+.textContent = myItems.length;
+
+document.getElementById("lostReports")
+.textContent =
+myItems.filter(item =>
+    item.itemType === "Lost"
+).length;
+
+document.getElementById("foundReports")
+.textContent =
+myItems.filter(item =>
+    item.itemType === "Found"
+).length;
+
+document.getElementById("profileAvatar").src =
+`https://ui-avatars.com/api/?name=${currentUser.name}&background=3B82F6&color=fff`;
+function editProfile(){
+
+    const newName =
+    prompt("Enter New Name:", currentUser.name);
+
+    if(!newName) return;
+
+    const newEmail =
+    prompt("Enter New Email:", currentUser.email);
+
+    if(!newEmail) return;
+
+    currentUser.name = newName;
+    currentUser.email = newEmail;
+
+    localStorage.setItem(
+        "reunite_user",
+        JSON.stringify(currentUser)
+    );
+
+    let users =
+    JSON.parse(localStorage.getItem("reunite_users")) || [];
+
+    const userIndex =
+    users.findIndex(u => u.id === currentUser.id);
+
+    if(userIndex !== -1){
+
+        users[userIndex].name = newName;
+        users[userIndex].email = newEmail;
+
+        localStorage.setItem(
+            "reunite_users",
+            JSON.stringify(users)
+        );
+    }
+
+    document.getElementById("profileName")
+    .textContent = newName;
+
+    document.getElementById("profileEmail")
+    .textContent = newEmail;
+
+    document.getElementById("profileAvatar").src =
+    `https://ui-avatars.com/api/?name=${newName}&background=3B82F6&color=fff`;
+
+    alert("Profile Updated Successfully!");
+}
+function changePassword(){
+
+    const currentPassword =
+    prompt("Enter Current Password:");
+
+    if(!currentPassword) return;
+
+    let users =
+    JSON.parse(localStorage.getItem("reunite_users")) || [];
+
+    const userIndex =
+    users.findIndex(u => u.id === currentUser.id);
+
+    if(userIndex === -1){
+        alert("User not found");
+        return;
+    }
+
+    if(users[userIndex].password !== currentPassword){
+        alert("Current Password is Incorrect");
+        return;
+    }
+
+    const newPassword =
+    prompt("Enter New Password:");
+
+    if(!newPassword) return;
+
+    const confirmPassword =
+    prompt("Confirm New Password:");
+
+    if(newPassword !== confirmPassword){
+        alert("Passwords do not match");
+        return;
+    }
+
+    if(!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}/.test(newPassword)){
+        alert(
+        "Password must contain uppercase, lowercase and a number"
+        );
+        return;
+    }
+
+    users[userIndex].password = newPassword;
+
+    localStorage.setItem(
+        "reunite_users",
+        JSON.stringify(users)
+    );
+
+    alert("Password Updated Successfully!");
+}
+</script>
+
+</body>
+</html>

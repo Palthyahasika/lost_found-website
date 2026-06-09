@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Claim Requests | ReUnite</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<script>
+tailwind.config = {
+darkMode:'class',
+theme:{
+extend:{
+colors:{
+primary:'#3B82F6'
+}
+}
+}
+}
+</script>
+
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+
+<!-- NAVBAR -->
+
+<nav class="bg-white shadow-md p-4">
+
+<div class="max-w-7xl mx-auto flex justify-between items-center">
+
+<h1 class="text-2xl font-bold">
+🙋 Claim Requests
+</h1>
+
+<button
+onclick="window.location.href='index.html'"
+class="bg-primary text-white px-5 py-2 rounded-full">
+
+← Back Home
+
+</button>
+
+</div>
+
+</nav>
+
+<!-- CONTENT -->
+
+<section class="py-10">
+
+<div class="max-w-6xl mx-auto px-4">
+
+<div
+id="requestsGrid"
+class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+</div>
+
+</div>
+
+</section>
+
+<script>
+
+const currentUser =
+JSON.parse(localStorage.getItem("reunite_user"));
+
+const requests =
+JSON.parse(localStorage.getItem("claim_requests"))
+|| [];
+
+const items =
+JSON.parse(localStorage.getItem("reunite_items"))
+|| [];
+
+const grid =
+document.getElementById("requestsGrid");
+
+if(!currentUser){
+
+grid.innerHTML = `
+<div class="col-span-full text-center">
+
+<h2 class="text-3xl font-bold">
+Please Login
+</h2>
+
+</div>
+`;
+
+}
+else{
+
+const myRequests =
+requests.filter(
+r => r.ownerId === currentUser.id
+);
+
+if(myRequests.length === 0){
+
+grid.innerHTML = `
+<div class="col-span-full text-center py-20">
+
+<i class="fas fa-inbox text-7xl text-gray-300 mb-4"></i>
+
+<h2 class="text-4xl font-bold">
+No Claim Requests
+</h2>
+
+</div>
+`;
+
+}
+else{
+
+myRequests.forEach(req=>{
+
+grid.innerHTML += `
+
+<div class="bg-white p-6 rounded-xl shadow">
+
+<h3 class="text-xl font-bold mb-3">
+${req.itemName}
+</h3>
+
+<p>
+👤 Claimant:
+<b>${req.claimantName}</b>
+</p>
+
+<p class="mb-4">
+📌 Status:
+<span class="font-semibold">
+${req.status}
+</span>
+</p>
+
+<button
+onclick="approveRequest(${req.id})"
+class="bg-green-500 text-white px-4 py-2 rounded">
+
+Approve
+
+</button>
+
+<button
+onclick="rejectRequest(${req.id})"
+class="bg-red-500 text-white px-4 py-2 rounded ml-2">
+
+Reject
+
+</button>
+<div id="claimsContainer"></div>
+</div>
+
+`;
+
+});
+
+}
+
+}
+
+function approveRequest(requestId){
+
+const request =
+requests.find(r => r.id == requestId);
+
+if(!request) return;
+
+request.status = "Approved";
+
+const item =
+items.find(
+i => i.id == request.itemId
+);
+
+if(item){
+item.status = "Returned";
+}
+
+localStorage.setItem(
+"claim_requests",
+JSON.stringify(requests)
+);
+
+localStorage.setItem(
+"reunite_items",
+JSON.stringify(items)
+);
+let notifications =
+JSON.parse(
+localStorage.getItem("notifications")
+) || [];
+
+notifications.push({
+id: Date.now(),
+userId: request.claimantId,
+message: `Your claim for "${request.itemName}" was approved.`,
+time: new Date().toLocaleString()
+});
+
+localStorage.setItem(
+"notifications",
+JSON.stringify(notifications)
+);
+alert("Request Approved");
+
+location.reload();
+
+}
+
+function rejectRequest(requestId){
+
+const request =
+requests.find(r => r.id == requestId);
+
+if(!request) return;
+
+request.status = "Rejected";
+
+localStorage.setItem(
+"claim_requests",
+JSON.stringify(requests)
+);
+let notifications =
+JSON.parse(
+localStorage.getItem("notifications")
+) || [];
+
+notifications.push({
+id: Date.now(),
+userId: request.claimantId,
+message: `Your claim for "${request.itemName}" was rejected.`,
+time: new Date().toLocaleString()
+});
+
+localStorage.setItem(
+"notifications",
+JSON.stringify(notifications)
+);
+alert("Request Rejected");
+
+location.reload();
+
+}
+
+</script>
+
+</body>
+</html>

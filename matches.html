@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Smart Matches | ReUnite</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+
+<nav class="bg-blue-600 text-white p-4 flex justify-between">
+
+<h1 class="text-2xl font-bold">
+🎯 Smart Matches
+</h1>
+
+<button
+onclick="window.location.href='index.html'"
+class="bg-white text-blue-600 px-4 py-2 rounded">
+
+Back Home
+
+</button>
+
+</nav>
+
+<div class="max-w-6xl mx-auto p-6">
+
+<div id="matchesContainer"
+class="grid md:grid-cols-2 gap-6">
+</div>
+
+</div>
+
+<script>
+
+const items =
+JSON.parse(localStorage.getItem("reunite_items")) || [];
+
+const currentUser =
+JSON.parse(localStorage.getItem("reunite_user"));
+
+const container =
+document.getElementById("matchesContainer");
+
+let matches = [];
+
+for(let i=0;i<items.length;i++){
+
+    for(let j=i+1;j<items.length;j++){
+
+        const a = items[i];
+        const b = items[j];
+
+        if(a.itemType === b.itemType)
+        continue;
+
+        const nameMatch =
+
+        a.itemName.toLowerCase()
+        .includes(
+            b.itemName.toLowerCase()
+        )
+
+        ||
+
+        b.itemName.toLowerCase()
+        .includes(
+            a.itemName.toLowerCase()
+        );
+
+        const categoryMatch =
+        a.category === b.category;
+
+        const locationMatch =
+
+        a.location.toLowerCase()
+        .includes(
+            b.location.toLowerCase()
+        )
+
+        ||
+
+        b.location.toLowerCase()
+        .includes(
+            a.location.toLowerCase()
+        );
+
+        let score = 0;
+
+        if(nameMatch) score += 50;
+
+        if(categoryMatch) score += 30;
+
+        if(locationMatch) score += 20;
+
+        if(score >= 50){
+
+            matches.push({
+
+                lost:
+                a.itemType === "Lost"
+                ? a
+                : b,
+
+                found:
+                a.itemType === "Found"
+                ? a
+                : b,
+
+                score
+
+            });
+
+        }
+
+    }
+
+}
+
+matches.sort(
+(a,b)=>b.score-a.score
+);
+
+if(matches.length === 0){
+
+container.innerHTML = `
+
+<div class="col-span-full text-center py-20">
+
+<i class="fas fa-search text-6xl text-gray-400 mb-4"></i>
+
+<h2 class="text-3xl font-bold">
+No Matches Found
+</h2>
+
+<p class="text-gray-500">
+Try adding more Lost/Found reports.
+</p>
+
+</div>
+
+`;
+
+}
+else{
+
+matches.forEach(match=>{
+
+container.innerHTML += `
+
+<div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+
+<div class="bg-green-500 text-white p-4">
+
+<h2 class="text-xl font-bold">
+🎯 Match Score: ${match.score}%
+</h2>
+
+</div>
+
+<div class="p-6">
+
+<h3 class="font-bold text-red-500 mb-2">
+🔴 Lost Item
+</h3>
+
+<p><b>Name:</b> ${match.lost.itemName}</p>
+<p><b>Location:</b> ${match.lost.location}</p>
+<p><b>Category:</b> ${match.lost.category}</p>
+
+<hr class="my-4">
+
+<h3 class="font-bold text-green-500 mb-2">
+🟢 Found Item
+</h3>
+
+<p><b>Name:</b> ${match.found.itemName}</p>
+<p><b>Location:</b> ${match.found.location}</p>
+<p><b>Category:</b> ${match.found.category}</p>
+${currentUser &&
+String(currentUser.id) === String(match.lost.userId)
+?
+`
+<button
+onclick="claimItem(${match.found.id})"
+class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+
+🙋 Claim This Item
+
+</button>
+`
+:
+''
+}
+</div>
+
+</div>
+
+`;
+
+});
+
+}
+function claimItem(itemId){
+
+    const currentUser =
+    JSON.parse(localStorage.getItem("reunite_user"));
+
+    if(!currentUser){
+        alert("Please login first");
+        return;
+    }
+
+    const foundItem =
+    items.find(item => item.id == itemId);
+
+    // Save Claim Request
+    let requests =
+    JSON.parse(localStorage.getItem("claim_requests"))
+    || [];
+
+    requests.push({
+
+        id: Date.now(),
+
+        itemId: itemId,
+
+        requesterId: currentUser.id,
+
+        requesterName: currentUser.name,
+
+        status: "Pending"
+
+    });
+
+    localStorage.setItem(
+        "claim_requests",
+        JSON.stringify(requests)
+    );
+
+    // Create Notification for Finder
+    let notifications =
+    JSON.parse(localStorage.getItem("notifications"))
+    || [];
+
+    notifications.push({
+
+        id: Date.now() + 1,
+
+        userId: foundItem.userId,
+
+        message:
+        `${currentUser.name} wants to claim your ${foundItem.itemName}`,
+
+        type: "claim",
+
+        itemId: itemId,
+
+        requesterId: currentUser.id,
+
+        requesterName: currentUser.name,
+
+        status: "Pending"
+
+    });
+
+    localStorage.setItem(
+        "notifications",
+        JSON.stringify(notifications)
+    );
+
+    alert("Claim Request Sent Successfully!");
+}
+</script>
+
+</body>
+</html>

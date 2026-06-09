@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Notifications</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+
+<div class="max-w-4xl mx-auto p-8">
+
+<h1 class="text-4xl font-bold mb-8">
+🔔 Notifications
+</h1>
+
+<div id="notificationList"
+class="space-y-4">
+</div>
+
+</div>
+
+<script>
+
+const currentUser =
+JSON.parse(localStorage.getItem("reunite_user"));
+
+const notifications =
+JSON.parse(localStorage.getItem("notifications"))
+|| [];
+
+const userNotifications =
+notifications.filter(
+n => String(n.userId) === String(currentUser.id)
+);
+
+const container =
+document.getElementById("notificationList");
+
+if(userNotifications.length === 0){
+
+container.innerHTML = `
+<div class="bg-white p-6 rounded-xl shadow">
+No notifications yet.
+</div>
+`;
+
+}
+else{
+
+userNotifications.reverse().forEach(n => {
+
+container.innerHTML += `
+<div class="bg-white p-5 rounded-xl shadow">
+
+<p class="font-medium">
+${n.message}
+</p>
+
+<p class="text-sm text-gray-500 mt-2">
+Just now
+</p>
+
+</div>
+`;
+
+});
+
+}
+
+</script>
+
+</body>
+</html>
